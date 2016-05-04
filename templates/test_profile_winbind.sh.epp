@@ -1,0 +1,18 @@
+<%- | String $success_color, String $error_color, String $validation_data | -%>
+#!/bin/bash
+
+# variables passed in via profile::winbind
+console_success="<%= $success_color %>"
+console_error="<%= $error_color %>"
+domain="<%= $validation_data %>"
+
+# check if joined to domain
+current_domain=`/usr/bin/wbinfo --own-domain | grep $domain`
+
+# write results to console
+if [ "$current_domain" == "$domain" ]
+then
+  echo -e "$console_success PASS: PROFILE::WINBIND Welcome to the $current_domain domain  \e[0m"
+else
+  echo -e "$console_error FAIL: PROFILE::WINBIND We were not able to jon $domain domain  \e[0m"
+fi
