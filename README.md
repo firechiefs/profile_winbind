@@ -41,12 +41,14 @@ profile::winbind::config:
 ## MODULE DEPENDENCIES:
 ```
 puppet module install genebean-winbind
+puppet module install jfryman-selinux
 ```
 ## USAGE:
 
 #### Puppetfile:
 ```
 mod "genebean-winbind",             '1.0.0'
+mod "jfryman-selinux",              '0.4.0'
 
 mod 'validation_script',
   :git => 'https://github.com/firechiefs/validation_script',

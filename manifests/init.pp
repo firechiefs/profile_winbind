@@ -27,12 +27,14 @@
 #   package_ensure: 'present'
 #   smb_workgroup: 'FOO'
 #   smb_realm: 'FOO.LOCAL'
-#   domainadminuser: 'WINDOWS_USER'
+#   domainadminuser: 'winbind_ad'
 #   domainadminpw: >
-#     ENC[PKCS7,BQAEggEAK+D7IdbID+lMTrDBNKAOabJt7dajLVDaaHF1+7GuhbyxU0QF6AS+38+v
-#     z9f0SJlKLP4gs/lIT88NYvfkxo4mN4t44NPSsrxJIRe9sKCtfnXG4WUTA8BgFxcgBAJ2LhfLo]
+#     ENC[PKCS7,QAEggEAK+D7IdbID+lMTrDBNKAOabJt7dajLCEd3n771de11HbvKV6hxC1506mJ
+#     CH5R8QNB9yeJCAlDEjp/oBzyjlwOsSFtI1XuWbLHqdOsBpaRle4fWBwJxt8eVZyyghM0Ng3zts
+#     2okHboI6MMHmNWCD46gaf8bX9jOaNJUF/72hSPREhv6L7DrBT1hvqh+IK3XknMXM0lkY+euX2d
+#     GVDaaHF1+7Guhb/989emjRWSpZRDOYQ6meTikpFp26s9XviM//KKS+ec25Tpy]
 #   pam_require_membership_of:
-#     - 'S-1-8-32-111111111-1111111111-11111111-1111' # WINDOWS_GROUP
+#     - 'S-2-6-20-65441541-712341584-5460932906-1234' # winbind_login
 
 class profile_winbind {
   # lookup winbind configuration hash
@@ -65,6 +67,7 @@ class profile_winbind {
         "/usr/bin/wbinfo --own-domain | grep -v ${config[smb_workgroup]}",
       path    => '/bin:/usr/bin',
       notify  => Service['winbind'],
+      returns => [0, 255],
     }
 
     # we need to determine if authconfig needs to be run
@@ -82,6 +85,16 @@ class profile_winbind {
       command => $config[authconfig_update_cmd],
       unless  => $authconfig_exec_check_cmd,
     }
+
+    # SELinux disables home directory creation on RHEL7.
+    # Let's apply module allowing this malicious act
+    if($::osfamily == 'RedHat' and $::operatingsystemmajrelease == '7')
+    {
+      selinux::module { 'mkdir':
+        ensure => 'present',
+        source => 'puppet:///modules/profile_winbind/mkdir.te',
+      }
+    } # end of SElinux check
 
   } # end of if
   else {
